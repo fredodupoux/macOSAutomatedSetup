@@ -1,10 +1,6 @@
-
 cask "microsoft-office"
 cask "zoom"
-cask "perplexity"
 cask "google-chrome"
 cask "whatsapp"
 cask "anydesk"
-
 brew "go"
-brew "git"
