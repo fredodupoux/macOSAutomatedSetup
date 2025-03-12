@@ -1,0 +1,7 @@
+tap "homebrew/cask"
+
+cask "microsoft-office"
+cask "zoom"
+cask "perplexity"
+cask "google-chrome"
+cask "whatsapp"
