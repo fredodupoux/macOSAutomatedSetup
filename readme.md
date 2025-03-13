@@ -1,10 +1,30 @@
-### Mac Setup Script
-Use this script to automate software installation across multiple Macs
-This script will install Hombrew and your casks, along with tailscale daemon for remote admin, and will hide the it admin user.
-⸻
+# macOS Setup Automation Script 🚀
 
-# Create your Brewfile
-i.e
+This script automates the installation of Homebrew, specified applications, the Tailscale daemon, and configures some macOS settings. It's designed to streamline the setup process across multiple macOS machines.  ✨
+
+## Functionality
+
+The script performs the following actions:
+
+1. **Installs Homebrew:** 🍺 If Homebrew isn't already installed, it will be installed automatically, ensuring the correct path is set for both Intel and Apple Silicon architectures.
+
+2. **Installs Applications from Brewfile:** 📦 The script utilizes a `Brewfile` (located in the same directory as the script, or specify a custom name when prompted) to define the applications to be installed using `brew bundle`. This allows for easy management and reproducibility of the software installation process. You'll need to create this `Brewfile` (see example below).
+
+3. **Installs and Configures Tailscale:** 🌐 The script installs the `tailscale` command-line tool, compiles the `tailscaled` daemon, moves it to the appropriate system directory, installs the system daemon, and starts a Tailscale session. This enables easy remote access to your machine.
+
+4. **Hides IT Admin User (Optional):** 🤫 Prompts the user for an IT admin username and then uses `dscl` to hide the specified user account from the standard user interface login screen. This step can be skipped if desired.
+
+5. **Configures macOS Settings:** ⚙️ The script configures several macOS settings, including automatic software updates, enabling the firewall, and requiring a password immediately after sleep or screen saver activation.
+
+6. **Self-Removal:** 🗑️ After successful execution, the script removes itself from the system.
+
+
+## Usage
+
+1. **Create a Brewfile:** ✍️ Create a file named `Brewfile` (or a name specified when the script prompts for the Brewfile's name) in the same directory as `mac_setup.sh`. This file should list the desired applications using Homebrew's cask and formula commands.
+
+   **Example `Brewfile`:**
+
 ``` 
 cask "microsoft-office"
 cask "zoom"
@@ -13,3 +33,26 @@ cask "whatsapp"
 cask "anydesk"
 brew "go" 
 ```
+
+
+2. **Run the script:** 🏃 Execute `mac_setup.sh` using `bash`. You will be prompted for the Brewfile name (if different than `Brewfile`) and the IT admin username (if you choose to hide an account).
+
+3. **Grant sudo permissions:** 🔑 The script requires administrator (sudo) privileges to perform certain actions. You will be prompted for your password at the beginning of the script.
+
+4. **Verify installation:** ✅ After the script completes, verify that the applications and Tailscale are correctly installed and configured.
+
+
+## Requirements
+
+* macOS operating system.
+* A working internet connection.
+
+
+## Note
+
+This script is provided as-is. Use at your own risk. Feel free to modify and adapt it to your specific needs. You are welcome to publish any modifications on GitHub. 👍
+
+
+## License
+
+This project is licensed under the MIT License
