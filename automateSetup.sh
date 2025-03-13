@@ -49,10 +49,10 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Run Brewfile to install apps
 echo "📦 Installing apps from your brewfile..."
-echo "enter your brewfile name (default: Brewfile):"
+echo "enter your brewfile name (default: brewfile):"
 read brewfile_name
 if [[ -z "$brewfile_name" ]]; then
-    brewfile_name="Brewfile"
+    brewfile_name="brewfile"
 fi
 if [[ ! -f "$SCRIPT_DIR/$brewfile_name" ]]; then
     echo "❌ ERROR: Brewfile '$brewfile_name' not found in $SCRIPT_DIR!"
@@ -111,16 +111,24 @@ tailscaled --version
 echo "🔑 Starting Tailscale session..."
 tailscale up
 
-# Ask user for IT admin username
-echo "🛠 Please enter the username to hide (e.g., 'itadminuser'):"
-read itadminuser
+# Ask if you want to rename and Hide IT Admin user
+echo "Do you want to hide the IT Admin user? (y/n):"
+read hide_itadmin
+if [[ "$hide_itadmin" == "y" || "$hide_itadmin" == "yes" || "$hide_itadmin" == "Y" || "$hide_itadmin" == "YES" ]]; then
+    
+    # Ask user for IT admin username
+    echo "🛠 Please enter the username to hide (e.g., 'itadminuser'):"
+    read itadminuser
 
-# Hide IT admin user account
-echo "🔒 Hiding user '$itadminuser'..."
-sudo dscl . create /Users/$itadminuser IsHidden 1
-sudo chflags hidden /Users/$itadminuser
+    # Hide IT admin user account
+    echo "🔒 Hiding user '$itadminuser'..."
+    sudo dscl . create /Users/$itadminuser IsHidden 1
+    sudo chflags hidden /Users/$itadminuser
 
-echo "✅ IT admin user '$itadminuser' is now hidden."
+    echo "✅ IT admin user '$itadminuser' is now hidden."
+else
+    echo "Continuing with macOS setup without hiding IT admin user."
+fi
 
 # MacOS Settings:
 echo "⚙️ Configuring macOS settings..."
