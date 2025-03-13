@@ -122,6 +122,46 @@ sudo chflags hidden /Users/$itadminuser
 
 echo "✅ IT admin user '$itadminuser' is now hidden."
 
+# MacOS Settings:
+echo "⚙️ Configuring macOS settings..."
+# Enable the automatic update check
+defaults write com.apple.SoftwareUpdate AutomaticCheckEnabled -bool true
+
+# Download newly available updates in background
+defaults write com.apple.SoftwareUpdate AutomaticDownload -int 1
+
+# Enable firewall
+sudo defaults write /Library/Preferences/com.apple.alf globalstate -int 1
+
+# Require password immediately after sleep or screen saver
+defaults write com.apple.screensaver askForPassword -int 1
+defaults write com.apple.screensaver askForPasswordDelay -int 0
+
+# Remote Management Settings:
+echo "🖥️ Configuring Remote Management Settings..."
+
+# Enable Apple Remote Desktop (ARD)
+sudo /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart \
+-activate \
+-configure -access -on \
+-configure -allowAccessFor -allUsers \
+-configure -restart -agent \
+-configure -clientopts -setmenuextra -menuextra yes
+
+# Set all remote management permissions
+sudo /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart \
+-configure -access -on \
+-configure -privs -all
+
+# Enable the menubar icon
+defaults write /Library/Preferences/com.apple.RemoteManagement.plist LoadRemoteManagementMenuExtra -bool true
+
+# Restart the ARD agent
+sudo /System/Library/CoreServices/RemoteManagement/ARDAgent.app/Contents/Resources/kickstart \
+-restart -agent
+
+echo "✅ Remote Management configured successfully."
+
 # Remove the script file after execution
 echo "🗑️ Cleaning up..."
 rm -- "$0"
