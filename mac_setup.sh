@@ -48,9 +48,25 @@ brew update
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Run Brewfile to install apps
-echo "📦 Installing apps from Brewfile..."
-brew bundle --file="$SCRIPT_DIR/Brewfile"
-
+echo "📦 Installing apps from your brewfile..."
+echo "enter your brewfile name (default: Brewfile):"
+read brewfile_name
+if [[ -z "$brewfile_name" ]]; then
+    brewfile_name="Brewfile"
+fi
+if [[ ! -f "$SCRIPT_DIR/$brewfile_name" ]]; then
+    echo "❌ ERROR: Brewfile '$brewfile_name' not found in $SCRIPT_DIR!"
+    exit 1
+fi
+echo "Using Brewfile: $brewfile_name"
+# Install apps from Brewfile
+brew bundle --file="$SCRIPT_DIR/$brewfile_name"
+if [[ $? -ne 0 ]]; then
+    echo "❌ ERROR: Brewfile installation failed!"
+    exit 1
+else
+    echo "✅ Apps installed successfully from Brewfile."
+fi
 # Verify Go installation
 if ! command -v go &> /dev/null; then
     echo "❌ ERROR: Go installation failed!"
@@ -83,7 +99,7 @@ else
     echo "✅ tailscaled is already in the system path."
 fi
 
-# Run tailscaled daemon
+# Run tailscale daemon
 echo "🚀 Installing and starting tailscaled daemon..."
 sudo tailscaled install-system-daemon
 
@@ -96,15 +112,16 @@ echo "🔑 Starting Tailscale session..."
 tailscale up
 
 # Ask user for IT admin username
-echo "🛠 Please enter the IT admin username to hide (e.g., 'itadminuser'):"
+echo "🛠 Please enter the username to hide (e.g., 'itadminuser'):"
 read itadminuser
 
 # Hide IT admin user account
-echo "🔒 Hiding IT admin user '$itadminuser'..."
+echo "🔒 Hiding user '$itadminuser'..."
 sudo dscl . create /Users/$itadminuser IsHidden 1
 sudo chflags hidden /Users/$itadminuser
 
 echo "✅ IT admin user '$itadminuser' is now hidden."
 
 # Remove the script file after execution
+echo "🗑️ Cleaning up..."
 rm -- "$0"
