@@ -1,5 +1,5 @@
-# cask "microsoft-office"
-# cask "zoom"
+cask "microsoft-office"
+cask "zoom"
 cask "google-chrome"
 cask "whatsapp"
 cask "anydesk"
