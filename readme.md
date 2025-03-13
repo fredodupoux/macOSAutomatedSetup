@@ -30,12 +30,10 @@ cask "microsoft-office"
 cask "zoom"
 cask "google-chrome"
 cask "whatsapp"
-cask "anydesk"
-brew "go" 
 ```
 
 
-2. **Run the script:** 🏃 Execute `mac_setup.sh` using `bash`. You will be prompted for the Brewfile name (if different than `Brewfile`) and the IT admin username (if you choose to hide an account).
+2. **Run the script:** 🏃 Execute `mac_setup.sh` using `bash` don't forget to chmod +x it first. You will be prompted for the Brewfile name (if different than `Brewfile`) and the IT admin username (if you choose to hide an account).
 
 3. **Grant sudo permissions:** 🔑 The script requires administrator (sudo) privileges to perform certain actions. You will be prompted for your password at the beginning of the script.
 
