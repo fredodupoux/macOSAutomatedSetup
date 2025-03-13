@@ -1,6 +1,6 @@
 # macOS Setup Automation Script 🚀
 
-This script automates the installation of Homebrew, specified applications, the Tailscale daemon, and configures some macOS settings. It's designed to streamline the setup process across multiple macOS machines.  ✨
+This script automates the installation of your specified applications using Homebrew, the Tailscale daemon, and configures some macOS settings. It's designed to streamline the setup process across multiple macOS machines.  ✨
 
 ## Functionality
 
@@ -8,11 +8,11 @@ The script performs the following actions:
 
 1. **Installs Homebrew:** 🍺 If Homebrew isn't already installed, it will be installed automatically, ensuring the correct path is set for both Intel and Apple Silicon architectures.
 
-2. **Installs Applications from Brewfile:** 📦 The script utilizes a `Brewfile` (located in the same directory as the script, or specify a custom name when prompted) to define the applications to be installed using `brew bundle`. This allows for easy management and reproducibility of the software installation process. You'll need to create this `Brewfile` (see example below).
+2. **Installs Applications from Brewfile:** 📦 The script utilizes a `brewfile` (located in the same directory as the script, or specify a custom name when prompted) to define the applications to be installed using `brew bundle`. This allows for easy management and reproducibility of the software installation process. You'll need to create this `brewfile` (see example below).
 
 3. **Installs and Configures Tailscale:** 🌐 The script installs the `tailscale` command-line tool, compiles the `tailscaled` daemon, moves it to the appropriate system directory, installs the system daemon, and starts a Tailscale session. This enables easy remote access to your machine.
 
-4. **Hides IT Admin User (Optional):** 🤫 Prompts the user for an IT admin username and then uses `dscl` to hide the specified user account from the standard user interface login screen. This step can be skipped if desired.
+4. **Hides IT Admin User (Optional):** Prompts the user for an IT admin username and then uses `dscl` to hide the specified user account from the standard user interface login screen. This step can be skipped if desired.
 
 5. **Configures macOS Settings:** ⚙️ The script configures several macOS settings, including automatic software updates, enabling the firewall, and requiring a password immediately after sleep or screen saver activation.
 
@@ -21,9 +21,9 @@ The script performs the following actions:
 
 ## Usage
 
-1. **Create a Brewfile:** ✍️ Create a file named `Brewfile` (or a name specified when the script prompts for the Brewfile's name) in the same directory as `mac_setup.sh`. This file should list the desired applications using Homebrew's cask and formula commands.
+1. **Create a Brewfile:** ✍️ Create a file named `Brewfile` (or a name specified when the script prompts for the Brewfile's name) in the same directory as `automateSetup.sh`. This file should list the desired applications using Homebrew's cask and formula commands.
 
-   **Example `Brewfile`:**
+   **Example `brewfile`:**
 
 ``` 
 cask "microsoft-office"
@@ -33,7 +33,11 @@ cask "whatsapp"
 ```
 
 
-2. **Run the script:** 🏃 Execute `mac_setup.sh` using `bash` don't forget to chmod +x it first. You will be prompted for the Brewfile name (if different than `Brewfile`) and the IT admin username (if you choose to hide an account).
+2. **Run the script:** 🏃 Execute `automateSetup.sh` using `bash`. You will be prompted for the Brewfile name (if different than `brewfile`) and the IT admin username (if you choose to hide an account).
+```
+chmod +x automateSetup.sh
+./automateSetup.sh
+```
 
 3. **Grant sudo permissions:** 🔑 The script requires administrator (sudo) privileges to perform certain actions. You will be prompted for your password at the beginning of the script.
 
@@ -44,7 +48,7 @@ cask "whatsapp"
 
 * macOS operating system.
 * A working internet connection.
-
+* Create a tailscale account to start growing your tailnet
 
 ## Note
 
