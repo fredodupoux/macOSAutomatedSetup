@@ -60,13 +60,25 @@ if [[ ! -f "$SCRIPT_DIR/$brewfile_name" ]]; then
 fi
 echo "Using Brewfile: $brewfile_name"
 # Install apps from Brewfile
-brew bundle --file="$SCRIPT_DIR/$brewfile_name"
-if [[ $? -ne 0 ]]; then
-    echo "❌ ERROR: Brewfile installation failed!"
-    exit 1
-else
-    echo "✅ Apps installed successfully from Brewfile."
-fi
+while true; do
+    brew bundle --file="$SCRIPT_DIR/$brewfile_name"
+    if [[ $? -ne 0 ]]; then
+        echo "⚠️ Error occurred during Brewfile installation."
+        echo "Do you want to continue with the rest of the setup? (y/n):"
+        read continue_setup
+        if [[ "$continue_setup" == "y" || "$continue_setup" == "Y" ]]; then
+            echo "Continuing with setup..."
+            break
+        else
+            echo "❌ Setup aborted by user."
+            exit 1
+        fi
+    else
+        echo "✅ Apps installed successfully from Brewfile."
+        break
+    fi
+done
+
 # Verify Go installation
 if ! command -v go &> /dev/null; then
     echo "❌ ERROR: Go installation failed!"
