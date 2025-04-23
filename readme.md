@@ -21,7 +21,12 @@ The script performs the following actions:
 
 ## Usage
 
-1. **Create a Brewfile:** ✍️ Create a file named `Brewfile` (or a name specified when the script prompts for the Brewfile's name) in the same directory as `automateSetup.sh`. This file should list the desired applications using Homebrew's cask and formula commands.
+1. **Download the Repository:** 📥 For brand new Mac systems without git or Xcode tools, use the following curl command to download, unzip, and navigate to the repository:
+```
+curl -L -o macOSAutomatedSetup.zip https://github.com/fredodupoux/macOSAutomatedSetup/archive/refs/heads/main.zip && unzip macOSAutomatedSetup.zip && cd macOsAutomatedSetup-main
+```
+
+2. **Edit the brewfile:** ✍️ Edit or create a brewfile in the same directory as `automateSetup.sh`. This file should list the desired applications using Homebrew's cask and formula commands.
 
    **Example `brewfile`:**
 
@@ -32,16 +37,15 @@ cask "google-chrome"
 cask "whatsapp"
 ```
 
-
-2. **Run the script:** 🏃 Execute `automateSetup.sh` using `bash`. You will be prompted for the Brewfile name (if different than `brewfile`) and the IT admin username (if you choose to hide an account).
+3. **Run the script:** 🏃 Execute `automateSetup.sh` using `bash`. You will be prompted for the brewfile name (if different than `brewfile`).
 ```
 chmod +x automateSetup.sh
 ./automateSetup.sh
 ```
 
-3. **Grant sudo permissions:** 🔑 The script requires administrator (sudo) privileges to perform certain actions. You will be prompted for your password at the beginning of the script.
+4. **Grant sudo permissions:** 🔑 The script requires administrator (sudo) privileges to perform certain actions. You will be prompted for your password at the beginning of the script.
 
-4. **Verify installation:** ✅ After the script completes, verify that the applications and Tailscale are correctly installed and configured.
+5. **Verify installation:** ✅ After the script completes, verify that the applications and Tailscale are correctly installed and configured.
 
 
 ## Requirements
