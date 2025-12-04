@@ -78,46 +78,14 @@ while true; do
         break
     fi
 done
-
-# Verify Go installation
-if ! command -v go &> /dev/null; then
-    echo "❌ ERROR: Go installation failed!"
-    exit 1
-else
-    echo "✅ Go installed successfully."
-fi
-
-# Ensure Go binaries are in PATH
-export PATH="$HOME/go/bin:$PATH"
-
-# Compile Tailscaled
-echo "🔨 Compiling Tailscaled..."
-go install tailscale.com/cmd/tailscale{,d}@main
-if [[ $? -ne 0 ]]; then
-    echo "❌ ERROR: Tailscaled compilation failed!"
-    exit 1
-else
-    echo "✅ Tailscaled compiled successfully."
-fi
-
-# Check if tailscaled is already in the system path
-if ! command -v tailscaled &> /dev/null; then
-    echo "🚚 Moving tailscaled to $BREW_PREFIX/bin/..."
-    sudo mv "$HOME/go/bin/tailscaled" "$BREW_PREFIX/bin/tailscaled"
-    sudo mv "$HOME/go/bin/tailscale" "$BREW_PREFIX/bin/tailscale"
-    sudo chmod +x "$BREW_PREFIX/bin/tailscaled"
-    sudo chmod +x "$BREW_PREFIX/bin/tailscale"
-else
-    echo "✅ tailscaled is already in the system path."
-fi
-
+# Install Tailscale cli
+echo "🚀 Installing and starting tailscale..."
+brew install --formula tailscale
 # Run tailscale daemon
-echo "🚀 Installing and starting tailscaled daemon..."
-sudo tailscaled install-system-daemon
-
+sudo brew services start tailscale
 # Confirm installation
 echo "✅ Setup complete! Installed Tailscale version:"
-tailscaled --version
+sudo tailscale --version
 
 # Start Tailscale session
 echo "🔑 Starting Tailscale session..."

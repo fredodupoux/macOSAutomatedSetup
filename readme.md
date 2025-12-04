@@ -1,6 +1,6 @@
 # macOS Setup Automation Script 🚀
 
-This script automates the installation of your specified applications using Homebrew, the Tailscale daemon, and configures some macOS settings. It's designed to streamline the setup process across multiple macOS machines.  ✨
+This script automates the installation of your specified applications using Homebrew, the Tailscale CLI with services, and configures some macOS settings. It's designed to streamline the setup process across multiple macOS machines.  ✨
 
 ## Functionality
 
@@ -10,7 +10,7 @@ The script performs the following actions:
 
 2. **Installs Applications from Brewfile:** 📦 The script utilizes a `brewfile` (located in the same directory as the script, or specify a custom name when prompted) to define the applications to be installed using `brew bundle`. This allows for easy management and reproducibility of the software installation process. You'll need to create this `brewfile` (see example below).
 
-3. **Installs and Configures Tailscale:** 🌐 The script installs the `tailscale` command-line tool, compiles the `tailscaled` daemon, moves it to the appropriate system directory, installs the system daemon, and starts a Tailscale session. This enables easy remote access to your machine.
+3. **Installs and Configures Tailscale:** 🌐 The script installs the `tailscale` command-line tool, and starts a Tailscale service. This enables easy remote access to your machine.
 
 4. **Hides IT Admin User (Optional):** Prompts the user for an IT admin username and then uses `dscl` to hide the specified user account from the standard user interface login screen. This step can be skipped if desired.
 
