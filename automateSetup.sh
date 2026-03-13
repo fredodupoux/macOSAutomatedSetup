@@ -20,7 +20,6 @@ BREWFILE_NAME="${BREWFILE_NAME:-brewfile}"
 # --- Computer Name ---
 echo ""
 echo "Computer name guidelines: max 63 chars, letters/numbers/spaces/hyphens."
-echo "  Examples: 'Johns-MacBook-Pro', 'Office-Mac-1', 'MacBook-Sales'"
 read -p "New computer name (leave empty to skip rename): " NEW_COMPUTER_NAME
 
 # --- New User ---
@@ -348,7 +347,6 @@ if [[ -n "$NEW_USERNAME" ]]; then
 
         # Clear sensitive variables
         unset NEW_PASSWORD NEW_PASSWORD_CONFIRM
-    fi
 else
     echo "Skipping new user creation."
 fi
