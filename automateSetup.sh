@@ -10,15 +10,75 @@ set -e
 echo "🚀 macOS Automated Setup Script"
 echo "================================"
 echo ""
-echo "Please provide the following configuration values:"
+echo "Please provide the following configuration values before setup begins:"
 echo ""
 
-# Collect all variables upfront
-read -p "Enter your Brewfile name (default: brewfile): " BREWFILE_NAME
+# --- Brewfile ---
+read -p "Brewfile name (default: brewfile): " BREWFILE_NAME
 BREWFILE_NAME="${BREWFILE_NAME:-brewfile}"
 
-read -s -p "Enter your Tailscale auth key (leave empty to skip Tailscale): " TAILSCALE_AUTHKEY
+# --- Computer Name ---
 echo ""
+echo "Computer name guidelines: max 63 chars, letters/numbers/spaces/hyphens."
+echo "  Examples: 'Johns-MacBook-Pro', 'Office-Mac-1', 'MacBook-Sales'"
+read -p "New computer name (leave empty to skip rename): " NEW_COMPUTER_NAME
+
+# --- New User ---
+echo ""
+read -p "New username to create (lowercase, no spaces; leave empty to skip): " NEW_USERNAME
+
+if [[ -n "$NEW_USERNAME" ]]; then
+    read -p "Full name for '$NEW_USERNAME' (default: $NEW_USERNAME): " NEW_FULLNAME
+    NEW_FULLNAME="${NEW_FULLNAME:-$NEW_USERNAME}"
+
+    read -p "Make '$NEW_USERNAME' an administrator? (Y/n, default: y): " MAKE_ADMIN
+    MAKE_ADMIN="${MAKE_ADMIN:-y}"
+
+    while true; do
+        read -s -p "Password for '$NEW_USERNAME': " NEW_PASSWORD
+        echo ""
+        if [[ -z "$NEW_PASSWORD" ]]; then
+            echo "❌ Password cannot be empty. Try again."
+            continue
+        fi
+        read -s -p "Confirm password: " NEW_PASSWORD_CONFIRM
+        echo ""
+        if [[ "$NEW_PASSWORD" != "$NEW_PASSWORD_CONFIRM" ]]; then
+            echo "❌ Passwords do not match. Try again."
+        else
+            break
+        fi
+    done
+    unset NEW_PASSWORD_CONFIRM
+fi
+
+# --- Hide IT Admin ---
+echo ""
+read -p "Hide an IT Admin user? (Y/n, default: y): " HIDE_ITADMIN
+HIDE_ITADMIN="${HIDE_ITADMIN:-y}"
+if [[ "$HIDE_ITADMIN" =~ ^[Yy](es)?$ ]]; then
+    read -p "Username to hide (e.g. 'itadminuser'): " ITADMIN_USER
+fi
+
+# --- Tailscale ---
+echo ""
+read -p "Install Tailscale? (Y/n, default: y): " INSTALL_TAILSCALE
+INSTALL_TAILSCALE="${INSTALL_TAILSCALE:-y}"
+
+if [[ "$INSTALL_TAILSCALE" =~ ^[Yy](es)?$ ]]; then
+    read -p "Do you have a Tailscale auth key? (y/N, default: n): " HAS_TAILSCALE_KEY
+    HAS_TAILSCALE_KEY="${HAS_TAILSCALE_KEY:-n}"
+
+    if [[ "$HAS_TAILSCALE_KEY" =~ ^[Yy](es)?$ ]]; then
+        read -s -p "Tailscale auth key: " TAILSCALE_AUTHKEY
+        echo ""
+    fi
+fi
+
+# --- Cleanup ---
+echo ""
+read -p "Delete this script and folder after setup? (Y/n, default: y): " DELETE_SCRIPT
+DELETE_SCRIPT="${DELETE_SCRIPT:-y}"
 
 echo ""
 echo "================================"
@@ -31,7 +91,7 @@ echo ""
 
 LOG_FILE="$HOME/mac_setup_$(date +%Y%m%d_%H%M%S).log"
 touch "$LOG_FILE"
-chmod 600 "$LOG_FILE"  # Only owner can read/write
+chmod 600 "$LOG_FILE"
 exec > >(tee -a "$LOG_FILE") 2>&1
 echo "📝 Logging to: $LOG_FILE"
 
@@ -44,6 +104,31 @@ log_step() {
     echo "▶ $1"
     echo "----------------------------------------"
 }
+
+# ============================================================================
+# RENAME COMPUTER (runs before pre-flight checks)
+# ============================================================================
+
+if [[ -n "$NEW_COMPUTER_NAME" ]]; then
+    log_step "Renaming Computer"
+
+    if [[ ${#NEW_COMPUTER_NAME} -gt 63 ]]; then
+        echo "⚠️ Warning: Name exceeds 63 characters. Skipping rename."
+        NEW_COMPUTER_NAME=""
+    else
+        echo "🔑 Requesting sudo access for computer rename..."
+        sudo -v
+
+        echo "💻 Renaming computer to '$NEW_COMPUTER_NAME'..."
+        sudo scutil --set ComputerName "$NEW_COMPUTER_NAME"
+        sudo scutil --set HostName "$NEW_COMPUTER_NAME"
+        LOCAL_HOST_NAME=$(echo "$NEW_COMPUTER_NAME" | tr ' ' '-' | tr -cd '[:alnum:]-')
+        sudo scutil --set LocalHostName "$LOCAL_HOST_NAME"
+        echo "✅ Computer renamed to '$NEW_COMPUTER_NAME'."
+    fi
+else
+    echo "⏭️  Skipping computer rename."
+fi
 
 # ============================================================================
 # PRE-FLIGHT CHECKS
@@ -61,8 +146,8 @@ if [[ "$MACOS_MAJOR" -lt 11 ]]; then
 fi
 echo "✅ macOS version: $MACOS_VERSION"
 
-# Refresh sudo permissions to avoid repeated password prompts
-echo "🔑 Requesting sudo access (you'll be prompted once)..."
+# Refresh sudo (may already be active from rename step)
+echo "🔑 Ensuring sudo access..."
 sudo -v
 
 # Keep sudo alive until script completes
@@ -127,10 +212,9 @@ brew update
 # TAILSCALE INSTALLATION (Before other apps to establish connectivity)
 # ============================================================================
 
-if [[ -n "$TAILSCALE_AUTHKEY" ]]; then
+if [[ "$INSTALL_TAILSCALE" =~ ^[Yy](es)?$ ]]; then
     log_step "Setting up Tailscale..."
 
-    # Install Tailscale if not already installed
     if ! command -v tailscale &>/dev/null; then
         echo "📥 Installing Tailscale..."
         brew install --formula tailscale
@@ -138,31 +222,31 @@ if [[ -n "$TAILSCALE_AUTHKEY" ]]; then
         echo "✅ Tailscale is already installed."
     fi
 
-    # Start Tailscale daemon if not running
     if ! pgrep -x "tailscaled" &>/dev/null; then
         echo "🚀 Starting Tailscale daemon..."
         sudo brew services start tailscale
-        # Give the daemon a moment to start
         sleep 2
     else
         echo "✅ Tailscale daemon is already running."
     fi
 
-    # Confirm installation
     echo "Tailscale version: $(tailscale --version | head -1)"
 
-    # Authenticate with Tailscale using authkey
-    echo "🔑 Authenticating Tailscale..."
-    sudo tailscale up --authkey="$TAILSCALE_AUTHKEY"
+    if [[ -n "$TAILSCALE_AUTHKEY" ]]; then
+        echo "🔑 Authenticating Tailscale with auth key..."
+        sudo tailscale up --authkey="$TAILSCALE_AUTHKEY"
+        unset TAILSCALE_AUTHKEY
+    else
+        echo "🔑 Authenticating Tailscale interactively..."
+        echo "   A login URL will be displayed — open it in a browser to authenticate."
+        sudo tailscale up
+    fi
+
     echo "✅ Tailscale connected."
-
     TAILSCALE_CONFIGURED=true
-
-    # Clear sensitive variable
-    unset TAILSCALE_AUTHKEY
 else
     echo ""
-    echo "⏭️  Skipping Tailscale setup (no auth key provided)."
+    echo "⏭️  Skipping Tailscale setup."
 fi
 
 # ============================================================================
@@ -199,11 +283,7 @@ fi
 
 log_step "Hide IT Admin User"
 
-read -p "Do you want to hide an IT Admin user? (Y/n, default: y): " HIDE_ITADMIN
-HIDE_ITADMIN="${HIDE_ITADMIN:-y}"
-
 if [[ "$HIDE_ITADMIN" =~ ^[Yy](es)?$ ]]; then
-    read -p "Enter the username to hide (e.g., 'itadminuser'): " ITADMIN_USER
     if [[ -z "$ITADMIN_USER" ]]; then
         echo "⚠️ Warning: Username cannot be empty. Skipping."
     elif ! dscl . -read "/Users/$ITADMIN_USER" &>/dev/null; then
@@ -219,111 +299,46 @@ else
 fi
 
 # ============================================================================
-# RENAME COMPUTER
-# ============================================================================
-
-log_step "Rename Computer"
-
-read -p "Do you want to rename this computer? (Y/n, default: y): " RENAME_COMPUTER
-RENAME_COMPUTER="${RENAME_COMPUTER:-y}"
-
-if [[ "$RENAME_COMPUTER" =~ ^[Yy](es)?$ ]]; then
-    echo "Current computer name: $(scutil --get ComputerName 2>/dev/null || echo 'Not set')"
-    echo ""
-    echo "Computer name guidelines:"
-    echo "  - Maximum 63 characters"
-    echo "  - Can include letters, numbers, spaces, and hyphens"
-    echo "  - Examples: 'Johns-MacBook-Pro', 'Office Mac 1', 'MacBook-Sales'"
-    echo ""
-    read -p "Enter new computer name: " NEW_COMPUTER_NAME
-    if [[ -z "$NEW_COMPUTER_NAME" ]]; then
-        echo "⚠️ Warning: Name cannot be empty. Skipping rename."
-    elif [[ ${#NEW_COMPUTER_NAME} -gt 63 ]]; then
-        echo "⚠️ Warning: Name exceeds 63 characters. Skipping rename."
-    else
-        echo "💻 Renaming computer to '$NEW_COMPUTER_NAME'..."
-
-        # Set ComputerName (friendly name in Finder)
-        sudo scutil --set ComputerName "$NEW_COMPUTER_NAME"
-
-        # Set HostName (network hostname)
-        sudo scutil --set HostName "$NEW_COMPUTER_NAME"
-
-        # Set LocalHostName (Bonjour name, no spaces allowed)
-        LOCAL_HOST_NAME=$(echo "$NEW_COMPUTER_NAME" | tr ' ' '-' | tr -cd '[:alnum:]-')
-        sudo scutil --set LocalHostName "$LOCAL_HOST_NAME"
-
-        echo "✅ Computer renamed to '$NEW_COMPUTER_NAME'."
-
-        # Store for summary
-        RENAMED_COMPUTER="$NEW_COMPUTER_NAME"
-    fi
-else
-    echo "Skipping computer rename."
-fi
-
-# ============================================================================
 # CREATE NEW USER
 # ============================================================================
 
 log_step "Create New User"
 
-read -p "Do you want to create a new user account? (Y/n, default: y): " CREATE_USER
-CREATE_USER="${CREATE_USER:-y}"
-
-if [[ "$CREATE_USER" =~ ^[Yy](es)?$ ]]; then
-    read -p "Enter the new username (lowercase, no spaces): " NEW_USERNAME
-    if [[ -z "$NEW_USERNAME" ]]; then
-        echo "⚠️ Warning: Username cannot be empty. Skipping user creation."
-    elif dscl . -read "/Users/$NEW_USERNAME" &>/dev/null 2>&1; then
+if [[ -n "$NEW_USERNAME" ]]; then
+    if dscl . -read "/Users/$NEW_USERNAME" &>/dev/null 2>&1; then
         echo "⚠️ Warning: User '$NEW_USERNAME' already exists. Skipping."
     else
-        read -p "Enter the full name for the user: " NEW_FULLNAME
-        NEW_FULLNAME="${NEW_FULLNAME:-$NEW_USERNAME}"
-
-        read -p "Make this user an administrator? (Y/n, default: y): " MAKE_ADMIN
-        MAKE_ADMIN="${MAKE_ADMIN:-y}"
-
-        read -s -p "Enter password for the new user: " NEW_PASSWORD
-        echo ""
-        read -s -p "Confirm password: " NEW_PASSWORD_CONFIRM
-        echo ""
-        if [[ -z "$NEW_PASSWORD" ]]; then
-            echo "❌ ERROR: Password cannot be empty!"
-        elif [[ "$NEW_PASSWORD" != "$NEW_PASSWORD_CONFIRM" ]]; then
-            echo "❌ ERROR: Passwords do not match!"
-        else
-            echo "👤 Creating user '$NEW_USERNAME'..."
+        echo "👤 Creating user '$NEW_USERNAME'..."
 
             # Find the next available UniqueID (UID)
-            LAST_UID=$(dscl . -list /Users UniqueID | awk '{print $2}' | sort -n | tail -1)
-            NEW_UID=$((LAST_UID + 1))
+        LAST_UID=$(dscl . -list /Users UniqueID | awk '{print $2}' | sort -n | tail -1)
+        NEW_UID=$((LAST_UID + 1))
 
             # Create the user
-            sudo dscl . -create "/Users/$NEW_USERNAME"
-            sudo dscl . -create "/Users/$NEW_USERNAME" UserShell /bin/zsh
-            sudo dscl . -create "/Users/$NEW_USERNAME" RealName "$NEW_FULLNAME"
-            sudo dscl . -create "/Users/$NEW_USERNAME" UniqueID "$NEW_UID"
-            sudo dscl . -create "/Users/$NEW_USERNAME" PrimaryGroupID 20
-            sudo dscl . -create "/Users/$NEW_USERNAME" NFSHomeDirectory "/Users/$NEW_USERNAME"
+        sudo dscl . -create "/Users/$NEW_USERNAME"
+        sudo dscl . -create "/Users/$NEW_USERNAME" UserShell /bin/zsh
+        sudo dscl . -create "/Users/$NEW_USERNAME" RealName "$NEW_FULLNAME"
+        sudo dscl . -create "/Users/$NEW_USERNAME" UniqueID "$NEW_UID"
+        sudo dscl . -create "/Users/$NEW_USERNAME" PrimaryGroupID 20
+        sudo dscl . -create "/Users/$NEW_USERNAME" NFSHomeDirectory "/Users/$NEW_USERNAME"
             # Set password (suppress from log)
-            sudo dscl . -passwd "/Users/$NEW_USERNAME" "$NEW_PASSWORD" 2>/dev/null
+        sudo dscl . -passwd "/Users/$NEW_USERNAME" "$NEW_PASSWORD" 2>/dev/null
 
             # Create home directory
-            sudo createhomedir -c -u "$NEW_USERNAME" 2>/dev/null || sudo mkdir -p "/Users/$NEW_USERNAME"
-            sudo chown -R "$NEW_USERNAME":staff "/Users/$NEW_USERNAME"
+        sudo createhomedir -c -u "$NEW_USERNAME" 2>/dev/null || sudo mkdir -p "/Users/$NEW_USERNAME"
+        sudo chown -R "$NEW_USERNAME":staff "/Users/$NEW_USERNAME"
 
             # Add to admin group if requested
-            if [[ "$MAKE_ADMIN" =~ ^[Yy](es)?$ ]]; then
-                sudo dscl . -append /Groups/admin GroupMembership "$NEW_USERNAME"
-                echo "✅ User '$NEW_USERNAME' created as administrator."
-            else
-                echo "✅ User '$NEW_USERNAME' created as standard user."
-            fi
+        if [[ "$MAKE_ADMIN" =~ ^[Yy](es)?$ ]]; then
+            sudo dscl . -append /Groups/admin GroupMembership "$NEW_USERNAME"
+            echo "✅ User '$NEW_USERNAME' created as administrator."
+        else
+            echo "✅ User '$NEW_USERNAME' created as standard user."
+        fi
 
             # Store for summary
-            CREATED_USER="$NEW_USERNAME"
-        fi
+        CREATED_USER="$NEW_USERNAME"
+    fi
 
         # Clear sensitive variables
         unset NEW_PASSWORD NEW_PASSWORD_CONFIRM
@@ -370,25 +385,24 @@ sudo systemsetup -setremoteappleevents off 2>/dev/null || true
 echo "✅ macOS settings configured."
 
 # ============================================================================
-# CLEANUP
+# SUMMARY & CLEANUP
 # ============================================================================
 
 log_step "Cleanup"
-
-read -p "Delete this script and folder? (Y/n, default: y): " DELETE_SCRIPT
-DELETE_SCRIPT="${DELETE_SCRIPT:-y}"
 
 echo ""
 echo "📋 Summary:"
 echo "   - Log file: $LOG_FILE"
 echo "   - Brewfile: $BREWFILE_NAME"
+if [[ -n "$NEW_COMPUTER_NAME" ]]; then
+    echo "   - Computer name: $NEW_COMPUTER_NAME"
+fi
 if [[ "$TAILSCALE_CONFIGURED" == true ]]; then
     echo "   - Tailscale: Connected"
+elif [[ "$INSTALL_TAILSCALE" =~ ^[Yy](es)?$ ]]; then
+    echo "   - Tailscale: Installed (check connection)"
 else
     echo "   - Tailscale: Skipped"
-fi
-if [[ -n "$RENAMED_COMPUTER" ]]; then
-    echo "   - Computer name: $RENAMED_COMPUTER"
 fi
 if [[ "$HIDE_ITADMIN" =~ ^[Yy](es)?$ ]] && [[ -n "$ITADMIN_USER" ]]; then
     echo "   - Hidden user: $ITADMIN_USER"
