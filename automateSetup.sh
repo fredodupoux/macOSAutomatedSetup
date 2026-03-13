@@ -25,11 +25,16 @@ read -p "New computer name (leave empty to skip rename): " NEW_COMPUTER_NAME
 
 # --- New User ---
 echo ""
-read -p "New username to create (lowercase, no spaces; leave empty to skip): " NEW_USERNAME
+read -p "Full name for new user (leave empty to skip user creation): " NEW_FULLNAME
 
-if [[ -n "$NEW_USERNAME" ]]; then
-    read -p "Full name for '$NEW_USERNAME' (default: $NEW_USERNAME): " NEW_FULLNAME
-    NEW_FULLNAME="${NEW_FULLNAME:-$NEW_USERNAME}"
+if [[ -n "$NEW_FULLNAME" ]]; then
+    # Derive default username from first + last name in lowercase
+    FIRST_NAME=$(echo "$NEW_FULLNAME" | awk '{print $1}')
+    LAST_NAME=$(echo "$NEW_FULLNAME" | awk '{print $NF}')
+    DEFAULT_USERNAME=$(echo "${FIRST_NAME}${LAST_NAME}" | tr '[:upper:]' '[:lower:]' | tr -cd '[:alnum:]')
+
+    read -p "Username (default: $DEFAULT_USERNAME): " NEW_USERNAME
+    NEW_USERNAME="${NEW_USERNAME:-$DEFAULT_USERNAME}"
 
     read -p "Make '$NEW_USERNAME' an administrator? (Y/n, default: y): " MAKE_ADMIN
     MAKE_ADMIN="${MAKE_ADMIN:-y}"
@@ -54,10 +59,11 @@ fi
 
 # --- Hide IT Admin ---
 echo ""
-read -p "Hide an IT Admin user? (Y/n, default: y): " HIDE_ITADMIN
+read -p "Hide IT Admin user? (Y/n, default: y): " HIDE_ITADMIN
 HIDE_ITADMIN="${HIDE_ITADMIN:-y}"
 if [[ "$HIDE_ITADMIN" =~ ^[Yy](es)?$ ]]; then
-    read -p "Username to hide (e.g. 'itadminuser'): " ITADMIN_USER
+    read -p "Username to hide (default: itadmin): " ITADMIN_USER
+    ITADMIN_USER="${ITADMIN_USER:-itadmin}"
 fi
 
 # --- Tailscale ---
